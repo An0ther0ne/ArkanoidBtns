@@ -230,7 +230,7 @@ namespace ArkanoidBtn {
 
             Random rnd = new Random();
             double rv = 4 * (2 + rnd.NextDouble());
-            double alpha = Math.PI * rnd.NextDouble();
+            double alpha = Math.PI / 4 + Math.PI * rnd.NextDouble() / 2;
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
 
