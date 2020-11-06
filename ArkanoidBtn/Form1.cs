@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Timers;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -26,7 +25,6 @@ namespace ArkanoidBtn {
             game.SetFieldSize(ClientSize.Width, ClientSize.Height);
         }
     }
-
     public class BaseObj {
         private int _px_, _py_;
         public virtual int PosX { get { return _px_; } set { _px_ = value; } }
@@ -37,13 +35,12 @@ namespace ArkanoidBtn {
             Height = h;
         }
     }
-
     public class Field : BaseObj {
         public int FldW, FldH;
         public Field(int w, int h) : base(w, h) {
             NewFieldSize(Width, Height);
         }
-        public void NewFieldSize(int w, int h){
+        public virtual void NewFieldSize(int w, int h){
             FldW = w;
             FldH = h;
         }
@@ -69,9 +66,10 @@ namespace ArkanoidBtn {
         public void SetColor(Color c) { body.BackColor = c; }
     }
     public class Game : Field{
-
-        private const int RefreshInterval = 200; // ms
-        private static System.Timers.Timer aTimer;
+        private const int RefreshInterval = 50; // ms
+        // private static System.Timers.Timer timer;
+        private System.Windows.Forms.Timer timer;
+        private static long ticks;
 
         public int Score = 0;
         public bool GameOver = false;
@@ -82,7 +80,6 @@ namespace ArkanoidBtn {
         private Desk desk;
         private BrickSet bricks;
         private Ball ball;
-
         public Game(int w, int h, Control.ControlCollection c) : base(w, h){
             Control = c;
             desk = new Desk(Width, Height, Control);
@@ -91,6 +88,13 @@ namespace ArkanoidBtn {
             bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, ballsize, Control);
             SetTimer();
+        }
+        ~Game() {
+            timer.Stop();
+            ball = null;
+            desk = null;
+            bricks = null;
+            timer.Dispose();
         }
         public void SetFieldSize(int w, int h) {
             NewFieldSize(w, h);
@@ -106,14 +110,19 @@ namespace ArkanoidBtn {
             }
             desk.SetLocation(x - desk.Width / 2, desk.FldH - desk.Thick - desk.AirBag);
         }
-        private static void SetTimer() {
-            aTimer = new System.Timers.Timer(RefreshInterval);
-            aTimer.Elapsed += OnTimedEvent;
-            aTimer.AutoReset = true;
-            aTimer.Enabled = true;
+        private void SetTimer() {
+            timer = new System.Windows.Forms.Timer();
+            timer.Interval = RefreshInterval;
+            timer.Tick += new EventHandler(OnTimerTick);
+            ticks = DateTime.Now.Ticks;
+            timer.Start();
         }
-        private static void OnTimedEvent(Object src, ElapsedEventArgs e) {
-           
+        private void OnTimerTick(Object src, EventArgs e) {
+            long t = DateTime.Now.Ticks;
+            double dt = (double)(t - ticks) / 1000000;
+            ball.Move(dt);
+            ticks = t;
+            // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
         }
     }
     public class Desk : MyBtn{
@@ -166,8 +175,12 @@ namespace ArkanoidBtn {
                 Bricks[i] = new Brick(CalcPosition(i), Width, Height, c);
                 Bricks[i].SetColor(Color.Aqua);
                 Bricks[i].Show();
-                // System.Diagnostics.Debug.Write("I:" + i.ToString() + " --> X=" + x.ToString() + ", Y=" + y.ToString() + "\n");
+                // System.Diagnostics.Debug.WriteLine("I:" + i.ToString() + " --> X=" + CalcPosition(i).X.ToString() + ", Y=" + CalcPosition(i).Y.ToString());
             }
+        }
+        ~BrickSet() {
+            for (int i = 0; i < Total; i++) { Bricks[i] = null; }
+            Bricks = null;
         }
         private void CalcBrickSize(){
             Width = (FldW - Margins - Margins) / BrksPerW;
@@ -178,7 +191,7 @@ namespace ArkanoidBtn {
                 Margins + Width * (i % BrksPerW),   // x
                 Margins + Height * (i / BrksPerW)   // y
         );}
-        public void NewFieldSize(int w, int h){
+        public override void NewFieldSize(int w, int h){
             base.NewFieldSize(w, h);
             CalcBrickSize();
             for (int i = 0; i < Total; i++) {
@@ -246,9 +259,9 @@ namespace ArkanoidBtn {
             }
             return res;
         }
-        public void Move() {
-            _pxd_ += SpdX;
-            _pyd_ += SpdY;
+        public void Move(double dt) {
+            _pxd_ += SpdX * dt;
+            _pyd_ += SpdY * dt;
             CheckX();
             CheckY();
             btn.Location = new Point(PosX, PosY);
