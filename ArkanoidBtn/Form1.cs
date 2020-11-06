@@ -13,7 +13,7 @@ namespace ArkanoidBtn {
 
     public partial class MainForm : Form {
 
-        private Game game;
+        public Game game;
 
         public MainForm() {
             InitializeComponent();
@@ -69,6 +69,10 @@ namespace ArkanoidBtn {
         public void SetColor(Color c) { body.BackColor = c; }
     }
     public class Game : Field{
+
+        private const int RefreshInterval = 200; // ms
+        private static System.Timers.Timer aTimer;
+
         public int Score = 0;
         public bool GameOver = false;
         
@@ -86,6 +90,7 @@ namespace ArkanoidBtn {
             desk.Show();
             bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, ballsize, Control);
+            SetTimer();
         }
         public void SetFieldSize(int w, int h) {
             NewFieldSize(w, h);
@@ -100,6 +105,15 @@ namespace ArkanoidBtn {
                 x = desk.Width / 2;
             }
             desk.SetLocation(x - desk.Width / 2, desk.FldH - desk.Thick - desk.AirBag);
+        }
+        private static void SetTimer() {
+            aTimer = new System.Timers.Timer(RefreshInterval);
+            aTimer.Elapsed += OnTimedEvent;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+        private static void OnTimedEvent(Object src, ElapsedEventArgs e) {
+           
         }
     }
     public class Desk : MyBtn{
