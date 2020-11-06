@@ -69,7 +69,7 @@ namespace ArkanoidBtn {
         }
     }
     public class Game : Field{
-        private const int RefreshInterval = 50; // ms
+        private const int RefreshInterval = 25; // ms
         // private static System.Timers.Timer timer;
         private System.Windows.Forms.Timer timer;
         private static long ticks;
@@ -131,7 +131,28 @@ namespace ArkanoidBtn {
             double dt = (double)(t - ticks) / 1000000;
             ball.Move(dt);
             ticks = t;
+            if (CheckCollision()) {
+                ball.Move(dt);
+            }
             // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
+        }
+        private bool CheckCollision() {
+            if (isIntersect(ball.GetRect(), desk.GetRect())) {
+                ball.FlipY();
+                return true;
+            }
+            return false;
+        }
+        private bool isIntersect(Rectangle a, Rectangle b) {
+            int ax2 = a.X + a.Width;
+            int ay2 = a.Y + a.Height;
+            int bx2 = b.X + b.Width;
+            int by2 = b.Y + b.Height;
+            if (ax2 > b.X && ax2 < bx2 && ay2 > b.Y && ay2 < by2){
+                return true;
+            } else {
+                return false;
+            }
         }
     }
     public class Desk : MyBtn{
@@ -229,7 +250,7 @@ namespace ArkanoidBtn {
             MaxY = h;
 
             Random rnd = new Random();
-            double rv = 4 * (2 + rnd.NextDouble());
+            double rv = 4 * (3 + rnd.NextDouble());
             double alpha = Math.PI / 4 + Math.PI * rnd.NextDouble() / 2;
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
@@ -242,16 +263,20 @@ namespace ArkanoidBtn {
 
             c.Add(btn);
         }
+        public void FlipX() {
+            SpdX = -SpdX;
+        }
+        public void FlipY() {
+            SpdY = -SpdY;
+        }
         public bool CheckX() {
             bool res = false;
             if (PosX + Size > MaxX) {
                 PosX = MaxX - Size;
-                SpdX = -SpdX;
                 res = true;
             }
             if (PosX < 0) {
                 PosX = 0;
-                SpdX = -SpdX;
                 res = true;
             }
             return res;
@@ -260,12 +285,10 @@ namespace ArkanoidBtn {
             bool res = false;
             if (PosY + Size > MaxY) {
                 PosY = MaxY - Size;
-                SpdY = -SpdY;
                 res = true;
             }
             if (PosY < 0) {
                 PosY = 0;
-                SpdY = -SpdY;
                 res = true;
             }
             return res;
@@ -273,8 +296,12 @@ namespace ArkanoidBtn {
         public void Move(double dt) {
             _pxd_ += SpdX * dt;
             _pyd_ += SpdY * dt;
-            CheckX();
-            CheckY();
+            if (CheckX()) {
+                FlipX();
+            }
+            if (CheckY()) {
+                FlipY();
+            }
             btn.Location = new Point(PosX, PosY);
         }
     }
