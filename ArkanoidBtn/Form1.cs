@@ -64,6 +64,9 @@ namespace ArkanoidBtn {
             body.Size = new Size(Width, Height);
         }
         public void SetColor(Color c) { body.BackColor = c; }
+        public Rectangle GetRect() {
+            return new Rectangle(PosX, PosY, Width, Height);
+        }
     }
     public class Game : Field{
         private const int RefreshInterval = 50; // ms
@@ -85,15 +88,21 @@ namespace ArkanoidBtn {
             desk = new Desk(Width, Height, Control);
             desk.SetColor(Color.Blue);
             desk.Show();
-            bricks = new BrickSet(Width, Height / 2, Control);
+            // bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, ballsize, Control);
             SetTimer();
         }
         ~Game() {
             timer.Stop();
-            ball = null;
-            desk = null;
-            bricks = null;
+            if (ball != null) {
+                ball = null;
+            }
+            if (desk != null) {
+                desk = null;
+            }
+            if (bricks != null) {
+                bricks = null;
+            }
             timer.Dispose();
         }
         public void SetFieldSize(int w, int h) {
@@ -220,8 +229,10 @@ namespace ArkanoidBtn {
             MaxY = h;
 
             Random rnd = new Random();
-            SpdX = 10 * rnd.NextDouble() - 5;
-            SpdY = -5.0 * (rnd.NextDouble() + 0.2);
+            double rv = 4 * (2 + rnd.NextDouble());
+            double alpha = Math.PI * rnd.NextDouble();
+            SpdX = rv * Math.Cos(alpha);
+            SpdY = - rv * Math.Sin(alpha);
 
             btn = new Button();
             btn.Location = new Point((w - s) / 2, h - d - s);
