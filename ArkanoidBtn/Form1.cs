@@ -34,6 +34,23 @@ namespace ArkanoidBtn {
             Width = w;
             Height = h;
         }
+        public Rectangle GetRect() {
+            return new Rectangle(PosX, PosY, Width, Height);
+        }
+        public bool isIntersect(Rectangle a, Rectangle b) {
+            int ax2 = a.X + a.Width;
+            int ay2 = a.Y + a.Height;
+            int bx2 = b.X + b.Width;
+            int by2 = b.Y + b.Height;
+            if (ax2 > b.X && ax2 < bx2 && ay2 > b.Y && ay2 < by2) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        public bool IntersectWith(Rectangle b) {
+            return isIntersect(GetRect(), b);
+        }
     }
     public class Field : BaseObj {
         public int FldW, FldH;
@@ -46,6 +63,7 @@ namespace ArkanoidBtn {
         }
     }
     public class MyBtn : Field{
+        public bool Visible { get { return body.Visible; } }
         protected Button body;
         public MyBtn(int w, int h) : base (w, h){
             body = new Button();
@@ -64,9 +82,6 @@ namespace ArkanoidBtn {
             body.Size = new Size(Width, Height);
         }
         public void SetColor(Color c) { body.BackColor = c; }
-        public Rectangle GetRect() {
-            return new Rectangle(PosX, PosY, Width, Height);
-        }
     }
     public class Game : Field{
         private const int RefreshInterval = 25; // ms
@@ -88,7 +103,7 @@ namespace ArkanoidBtn {
             desk = new Desk(Width, Height, Control);
             desk.SetColor(Color.Blue);
             desk.Show();
-            // bricks = new BrickSet(Width, Height / 2, Control);
+            bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, ballsize, Control);
             SetTimer();
         }
@@ -134,6 +149,10 @@ namespace ArkanoidBtn {
             if (CheckCollision()) {
                 ball.Move(dt);
             }
+            if (bricks.CheckCollisionWith(ball.GetRect())){
+                ball.FlipY();
+                ball.Move(dt);
+            }
             // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
         }
         private bool CheckCollision() {
@@ -142,17 +161,6 @@ namespace ArkanoidBtn {
                 return true;
             }
             return false;
-        }
-        private bool isIntersect(Rectangle a, Rectangle b) {
-            int ax2 = a.X + a.Width;
-            int ay2 = a.Y + a.Height;
-            int bx2 = b.X + b.Width;
-            int by2 = b.Y + b.Height;
-            if (ax2 > b.X && ax2 < bx2 && ay2 > b.Y && ay2 < by2){
-                return true;
-            } else {
-                return false;
-            }
         }
     }
     public class Desk : MyBtn{
@@ -229,6 +237,15 @@ namespace ArkanoidBtn {
                 Bricks[i].SetLocation(newpos.X, newpos.Y);
                 Bricks[i].Resize(Width, Height);
             }
+        }
+        public bool CheckCollisionWith(Rectangle ball) {
+            for (int i = 0; i < Total; i++) {
+                if (Bricks[i].Visible && Bricks[i].IntersectWith(ball)) {
+                    Bricks[i].Hide();
+                    return true;
+                }
+            }
+            return false;
         }
     }
     public class Ball : Brick{
