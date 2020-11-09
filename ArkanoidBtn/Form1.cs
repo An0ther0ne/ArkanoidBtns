@@ -42,7 +42,8 @@ namespace ArkanoidBtn {
             int ay2 = a.Y + a.Height;
             int bx2 = b.X + b.Width;
             int by2 = b.Y + b.Height;
-            if (ax2 > b.X && ax2 < bx2 && ay2 > b.Y && ay2 < by2) {
+            if ((bx2 > a.X) && (b.X < ax2) &&
+                (by2 > a.Y) && (b.Y < ay2)){
                 return true;
             } else {
                 return false;
@@ -63,14 +64,27 @@ namespace ArkanoidBtn {
         }
     }
     public class MyBtn : Field{
-        public bool Visible { get { return body.Visible; } }
+        public bool Active;
         protected Button body;
         public MyBtn(int w, int h) : base (w, h){
             body = new Button();
             body.Visible = false;
         }
-        public void Show() { body.Show(); }
-        public void Hide() { body.Hide(); }
+        public void Show() { 
+            body.Visible = true;  
+            Active = true;
+            body.Show(); 
+            #if DEBUG
+                int maxx = PosX + Width;
+                int maxy = PosY + Height;
+                body.Text = PosX.ToString() + '-' + maxx.ToString() + "::" + PosY.ToString() + '-' + maxy.ToString();
+            #endif
+        }
+        public void Hide() { 
+            body.Visible = false; 
+            Active = false;
+            body.Hide();
+        }
         public void SetLocation(int x, int y) {
             PosX = x;
             PosY = y;
@@ -156,7 +170,7 @@ namespace ArkanoidBtn {
             // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
         }
         private bool CheckCollision() {
-            if (isIntersect(ball.GetRect(), desk.GetRect())) {
+            if (isIntersect(desk.GetRect(), ball.GetRect())) {
                 ball.FlipY();
                 return true;
             }
@@ -187,7 +201,6 @@ namespace ArkanoidBtn {
         }
     }
     public class Brick : MyBtn {
-        public bool Active;
         public Brick(Point pos, int w, int h, Control.ControlCollection c) : base(w, h){
             SetLocation(pos.X, pos.Y);
             body.Size = new Size(Width, Height);
@@ -213,7 +226,10 @@ namespace ArkanoidBtn {
                 Bricks[i] = new Brick(CalcPosition(i), Width, Height, c);
                 Bricks[i].SetColor(Color.Aqua);
                 Bricks[i].Show();
-                // System.Diagnostics.Debug.WriteLine("I:" + i.ToString() + " --> X=" + CalcPosition(i).X.ToString() + ", Y=" + CalcPosition(i).Y.ToString());
+                #if DEBUG
+                    Point pos = CalcPosition(i);
+                    System.Diagnostics.Debug.WriteLine("I:" + i.ToString() + " --> X=" + pos.X.ToString() + ", Y=" + pos.Y.ToString());
+                #endif
             }
         }
         ~BrickSet() {
@@ -238,9 +254,9 @@ namespace ArkanoidBtn {
                 Bricks[i].Resize(Width, Height);
             }
         }
-        public bool CheckCollisionWith(Rectangle ball) {
+        public bool CheckCollisionWith(Rectangle ballrect) {
             for (int i = 0; i < Total; i++) {
-                if (Bricks[i].Visible && Bricks[i].IntersectWith(ball)) {
+                if (Bricks[i].Active && Bricks[i].IntersectWith(ballrect)) {
                     Bricks[i].Hide();
                     return true;
                 }
