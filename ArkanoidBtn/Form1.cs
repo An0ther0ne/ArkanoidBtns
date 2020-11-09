@@ -9,11 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ArkanoidBtn {
-
     public partial class MainForm : Form {
-
         public Game game;
-
         public MainForm() {
             InitializeComponent();
             game = new Game(ClientSize.Width, ClientSize.Height, this.Controls);
@@ -138,6 +135,7 @@ namespace ArkanoidBtn {
             NewFieldSize(w, h);
             desk.NewFldSize(w, h);
             bricks.NewFieldSize(w, h / 2);
+            ball.NewFieldSize(w, h);
         }
         public void DeskMoveTo(int x){
             if (x > FldW - desk.Width / 2) {
@@ -279,8 +277,8 @@ namespace ArkanoidBtn {
 
         public Ball(int w, int h, int d, int s, Control.ControlCollection c) : base((w-s)/2, h-d-s, s, s, c){
 
-            MaxX = w;
-            MaxY = h;
+            FldW = w;
+            FldH = h;
 
             Random rnd = new Random();
             double rv = 4 * (3 + rnd.NextDouble());
@@ -304,8 +302,8 @@ namespace ArkanoidBtn {
         }
         public bool CheckX() {
             bool res = false;
-            if (PosX + Size > MaxX) {
-                PosX = MaxX - Size;
+            if (PosX + Size > FldW) {
+                PosX = FldW - Size;
                 res = true;
             }
             if (PosX < 0) {
@@ -316,8 +314,8 @@ namespace ArkanoidBtn {
         }
         public bool CheckY() {
             bool res = false;
-            if (PosY + Size > MaxY) {
-                PosY = MaxY - Size;
+            if (PosY + Size > FldH) {
+                PosY = FldH - Size;
                 res = true;
             }
             if (PosY < 0) {
