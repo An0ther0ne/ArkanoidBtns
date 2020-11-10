@@ -34,19 +34,42 @@ namespace ArkanoidBtn {
         public Rectangle GetRect() {
             return new Rectangle(PosX, PosY, Width, Height);
         }
-        public bool isIntersect(Rectangle a, Rectangle b) {
+        public int isIntersect(Rectangle a, Rectangle b) {
             int ax2 = a.X + a.Width;
             int ay2 = a.Y + a.Height;
             int bx2 = b.X + b.Width;
             int by2 = b.Y + b.Height;
-            if ((bx2 > a.X) && (b.X < ax2) &&
-                (by2 > a.Y) && (b.Y < ay2)){
-                return true;
+            if ((bx2 > a.X) && (b.X < ax2) && (by2 > a.Y) && (b.Y < ay2)){
+                if (Delta(a.Y, ay2, b.Y, by2) > Delta(a.X, ax2, b.X, bx2)){
+                    return 1;
+                }else{
+                    return 2;
+                }
             } else {
-                return false;
+                return 0;
             }
         }
-        public bool IntersectWith(Rectangle b) {
+        private int Delta(int a1, int a2, int b1, int b2){
+            if (b1 < a1){
+                if (b2 > a1){
+                    return b2 - a1;
+                }else{
+                    return 0;
+                }
+            }
+            if (b2 > a2) {
+                if (b1 < a2) {
+                    return a2 - b1;
+                } else {
+                    return 0;
+                }
+            }
+            if ((b1 > a1) && (b2 < a2)){
+                return b2 - b1;
+            }
+            return 0;
+        }
+        public int IntersectWith(Rectangle b) {
             return isIntersect(GetRect(), b);
         }
     }
@@ -99,8 +122,7 @@ namespace ArkanoidBtn {
         public void SetColor(Color c) { body.BackColor = c; }
     }
     public class Game : Field{
-        private const int RefreshInterval = 25; // ms
-        // private static System.Timers.Timer timer;
+        private const int RefreshInterval = 25;         // ms
         private System.Windows.Forms.Timer timer;
         private static long ticks;
 
@@ -161,21 +183,23 @@ namespace ArkanoidBtn {
             double dt = (double)(t - ticks) / 1000000;
             ball.Move(dt);
             ticks = t;
-            if (CheckCollision()) {
-                ball.Move(dt);
-            }
-            if (bricks.CheckCollisionWith(ball.GetRect())){
-                ball.FlipY();
+            int res = bricks.CheckCollisionWith(ball.GetRect()); 
+            res |= isIntersect(desk.GetRect(), ball.GetRect()); 
+            if (res > 0) {
+                ProceedCollision(res);
                 ball.Move(dt);
             }
             // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
         }
-        private bool CheckCollision() {
-            if (isIntersect(desk.GetRect(), ball.GetRect())) {
-                ball.FlipY();
-                return true;
+        private void ProceedCollision(int r) {
+            switch (r) {
+                case 1:
+                    ball.FlipX();
+                    break;
+                case 2:
+                    ball.FlipY();
+                    break;
             }
-            return false;
         }
     }
     public class Desk : MyBtn{
@@ -234,6 +258,11 @@ namespace ArkanoidBtn {
             Bricks = new Brick[Total];
             CalcBrickSize();
             for (int i = 0; i < Total; i++) {
+                #if DEBUG
+                    if (i % BrksPerW == BrksPerW / 2) {
+                        continue;
+                    }
+                #endif
                 Bricks[i] = new Brick(CalcPosition(i), Width, Height, c);
                 Bricks[i].SetColor(Color.Aqua);
                 Bricks[i].Show();
@@ -265,14 +294,17 @@ namespace ArkanoidBtn {
                 Bricks[i].Resize(Width, Height);
             }
         }
-        public bool CheckCollisionWith(Rectangle ballrect) {
+        public int CheckCollisionWith(Rectangle ballrect) {
             for (int i = 0; i < Total; i++) {
-                if (Bricks[i].Active && Bricks[i].IntersectWith(ballrect)) {
-                    Bricks[i].Hide();
-                    return true;
+                if (Bricks[i] != null && Bricks[i].Active ) {
+                    int res = Bricks[i].IntersectWith(ballrect);
+                    if (res > 0) {
+                        Bricks[i].Hide();
+                        return res;
+                    }
                 }
             }
-            return false;
+            return 0;
         }
     }
     public class Ball : Brick{
@@ -286,9 +318,8 @@ namespace ArkanoidBtn {
 
             FldW = w;
             FldH = h;
-
             Random rnd = new Random();
-            double rv = 4 * (3 + rnd.NextDouble());
+            double rv = 8 * (3 + rnd.NextDouble());
             double alpha = Math.PI / 4 + Math.PI * rnd.NextDouble() / 2;
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
