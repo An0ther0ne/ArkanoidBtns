@@ -183,10 +183,12 @@ namespace ArkanoidBtn {
             double dt = (double)(t - ticks) / 1000000;
             ball.Move(dt);
             ticks = t;
-            int res = bricks.CheckCollisionWith(ball.GetRect()); 
-            res |= isIntersect(desk.GetRect(), ball.GetRect()); 
-            if (res > 0) {
-                ProceedCollision(res);
+            int col_res = bricks.CheckCollisionWith(ball.GetRect());
+            if (col_res == 0) {
+                col_res = isIntersect(desk.GetRect(), ball.GetRect());
+            }
+            if (col_res > 0) {
+                ProceedCollision(col_res);
                 ball.Move(dt);
             }
             // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
@@ -262,6 +264,9 @@ namespace ArkanoidBtn {
                     if (i % BrksPerW == BrksPerW / 2) {
                         continue;
                     }
+                    if (i % BrksPerW == BrksPerW / 2 + 1) {
+                        continue;
+                    }
                 #endif
                 Bricks[i] = new Brick(CalcPosition(i), Width, Height, c);
                 Bricks[i].SetColor(Color.Aqua);
@@ -289,6 +294,14 @@ namespace ArkanoidBtn {
             base.NewFieldSize(w, h);
             CalcBrickSize();
             for (int i = 0; i < Total; i++) {
+                #if DEBUG
+                    if (i % BrksPerW == BrksPerW / 2) {
+                        continue;
+                    }
+                    if (i % BrksPerW == BrksPerW / 2 + 1) {
+                        continue;
+                    }
+                #endif
                 Point newpos = CalcPosition(i);
                 Bricks[i].SetLocation(newpos.X, newpos.Y);
                 Bricks[i].Resize(Width, Height);
@@ -313,14 +326,18 @@ namespace ArkanoidBtn {
         public override int PosY { get { return (int)_pyd_; } set { _pyd_ = value; } }
         public double SpdX, SpdY;
         public int Size { get { return Width; } set { Width = Height = value; } }
-        private bool ismove = false;
         public Ball(int w, int h, int d, Control.ControlCollection c) : base(w/2, h-d, c){
 
             FldW = w;
             FldH = h;
             Random rnd = new Random();
             double rv = 8 * (3 + rnd.NextDouble());
-            double alpha = Math.PI / 4 + Math.PI * rnd.NextDouble() / 2;
+            double alpha = Math.PI / 8 + Math.PI * rnd.NextDouble() / 4;
+
+            if (rnd.Next(2) > 0) {
+                alpha = -alpha;
+            } 
+
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
 
