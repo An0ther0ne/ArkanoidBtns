@@ -92,6 +92,10 @@ namespace ArkanoidBtn {
             Height = h;
             body.Size = new Size(Width, Height);
         }
+        public void Resize(int s) {
+            Width = Height = s;
+            body.Size = new Size(s, s);
+        }
         public void SetColor(Color c) { body.BackColor = c; }
     }
     public class Game : Field{
@@ -103,7 +107,6 @@ namespace ArkanoidBtn {
         public int Score = 0;
         public bool GameOver = false;
         
-        private const int ballsize = 20;
         private Control.ControlCollection Control;
 
         private Desk desk;
@@ -115,7 +118,7 @@ namespace ArkanoidBtn {
             desk.SetColor(Color.Blue);
             desk.Show();
             bricks = new BrickSet(Width, Height / 2, Control);
-            ball = new Ball(Width, Height, desk.Thick + desk.AirBag, ballsize, Control);
+            ball = new Ball(Width, Height, desk.Thick + desk.AirBag, Control);
             SetTimer();
         }
         ~Game() {
@@ -199,14 +202,24 @@ namespace ArkanoidBtn {
         }
     }
     public class Brick : MyBtn {
+        public Brick(int x, int y, Control.ControlCollection c) : base(CalcSize(x, y), CalcSize(x, y)) {
+            Init(x, y, CalcSize(x, y), CalcSize(x, y), c);
+        }
+        public Brick(Rectangle r, Control.ControlCollection c) : base(r.Width, r.Height) {
+            Init(r.X, r.Y, r.Width, r.Height, c);
+        }
         public Brick(Point pos, int w, int h, Control.ControlCollection c) : base(w, h){
-            SetLocation(pos.X, pos.Y);
-            body.Size = new Size(Width, Height);
-            c.Add(body);
+            Init(pos.X, pos.Y, w, h, c);
         }
         public Brick(int x, int y, int w, int h, Control.ControlCollection c) : base(w, h) {
+            Init(x, y, w, h, c);
+        }
+        protected static int CalcSize(int w, int h){
+            return Math.Min(w, h) / 26;
+        }
+        private void Init(int x, int y, int w, int h, Control.ControlCollection c) {
             SetLocation(x, y);
-            body.Size = new Size(Width, Height);
+            body.Size = new Size(w, h);
             c.Add(body);
         }
     }
@@ -267,15 +280,9 @@ namespace ArkanoidBtn {
         public override int PosX { get { return (int)_pxd_; } set { _pxd_ = value; } }
         public override int PosY { get { return (int)_pyd_; } set { _pyd_ = value; } }
         public double SpdX, SpdY;
-        public int Size {
-            get { return Width; }
-            set { Width = Height = value; }
-        }
-        private int MaxX, MaxY;
+        public int Size { get { return Width; } set { Width = Height = value; } }
         private bool ismove = false;
-        private Button btn;
-
-        public Ball(int w, int h, int d, int s, Control.ControlCollection c) : base((w-s)/2, h-d-s, s, s, c){
+        public Ball(int w, int h, int d, Control.ControlCollection c) : base(w/2, h-d, c){
 
             FldW = w;
             FldH = h;
@@ -286,13 +293,13 @@ namespace ArkanoidBtn {
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
 
-            btn = new Button();
-            btn.Location = new Point((w - s) / 2, h - d - s);
-            btn.Size = new Size(s, s);
-            btn.BackColor = Color.Brown;
-            btn.Show();
+            PosX = body.Location.X - Size / 2;
+            PosY = body.Location.Y - Size;
 
-            c.Add(btn);
+            body.Location = new Point(PosX, PosY);
+            body.BackColor = Color.Brown;
+            body.FlatStyle = FlatStyle.Flat;
+            body.Show();
         }
         public void FlipX() {
             SpdX = -SpdX;
@@ -333,7 +340,11 @@ namespace ArkanoidBtn {
             if (CheckY()) {
                 FlipY();
             }
-            btn.Location = new Point(PosX, PosY);
+            body.Location = new Point(PosX, PosY);
+        }
+        public void NewFieldSize(int w, int h){     // Not override! 
+            base.NewFieldSize(w, h);
+            Resize(Size = CalcSize(w / 2, h));
         }
     }
 }
