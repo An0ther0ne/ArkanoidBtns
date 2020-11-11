@@ -123,6 +123,7 @@ namespace ArkanoidBtn {
         public void SetColor(Color c) { _body_.BackColor = c; }
     }
     public class Game : Field{
+        public int Attempts = 3;
         private const int RefreshInterval = 25;         // ms
         private System.Windows.Forms.Timer timer;
         private static long ticks;
@@ -140,13 +141,12 @@ namespace ArkanoidBtn {
             desk = new Desk(Width, Height, Control);
             desk.SetColor(Color.Blue);
             desk.Body.MouseMove += new MouseEventHandler(MouseOnDeskMove);
-            desk.Show();
             bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, Control);
-            SetTimer();
+            Start();
         }
         ~Game() {
-            timer.Stop();
+            Stop();
             if (ball != null) {
                 ball = null;
             }
@@ -157,6 +157,13 @@ namespace ArkanoidBtn {
                 bricks = null;
             }
             timer.Dispose();
+        }
+        public void Start() {
+            desk.Show();
+            SetTimer();
+        }
+        public void Stop() {
+            timer.Stop();
         }
         public void SetFieldSize(int w, int h) {
             NewFieldSize(w, h);
@@ -198,6 +205,14 @@ namespace ArkanoidBtn {
             if (col_res > 0) {
                 ProceedCollision(col_res);
                 ball.Move(dt);
+            }
+            if (ball.strikeout) {
+                if (--Attempts >= 0) {
+                    ball.Hide();
+                    ball = new Ball(Width, Height, desk.Thick + desk.AirBag, Control);
+                } else {
+                    Stop();
+                }
             }
         }
         private void ProceedCollision(int r) {
@@ -328,6 +343,7 @@ namespace ArkanoidBtn {
         }
     }
     public class Ball : Brick{
+        public bool strikeout = false;
         private double _pxd_, _pyd_;
         public override int PosX { get { return (int)_pxd_; } set { _pxd_ = value; } }
         public override int PosY { get { return (int)_pyd_; } set { _pyd_ = value; } }
@@ -342,7 +358,7 @@ namespace ArkanoidBtn {
             double alpha = Math.PI / 8 + Math.PI * rnd.NextDouble() / 4;
 
             if (rnd.Next(2) > 0) {
-                alpha = -alpha;
+                alpha = Math.PI - alpha;
             } 
 
             SpdX = rv * Math.Cos(alpha);
@@ -379,6 +395,7 @@ namespace ArkanoidBtn {
             if (PosY + Size > FldH) {
                 PosY = FldH - Size;
                 res = true;
+                strikeout = true;
             }
             if (PosY < 0) {
                 PosY = 0;
