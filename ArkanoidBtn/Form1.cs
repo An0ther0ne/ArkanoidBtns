@@ -199,7 +199,6 @@ namespace ArkanoidBtn {
                 ProceedCollision(col_res);
                 ball.Move(dt);
             }
-            // Console.WriteLine("The Elapsed event was raised at ticks: {0:}", DateTime.Now.Ticks);
         }
         private void ProceedCollision(int r) {
             switch (r) {
