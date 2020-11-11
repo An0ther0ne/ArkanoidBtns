@@ -85,41 +85,42 @@ namespace ArkanoidBtn {
     }
     public class MyBtn : Field{
         public bool Active;
-        protected Button body;
+        public Button Body { get { return _body_; } }
+        private Button _body_;
         public MyBtn(int w, int h) : base (w, h){
-            body = new Button();
-            body.Visible = false;
+            _body_ = new Button();
+            Body.Visible = false;
         }
         public void Show() { 
-            body.Visible = true;  
+            _body_.Visible = true;  
             Active = true;
-            body.Show(); 
+            _body_.Show(); 
             #if DEBUG
                 int maxx = PosX + Width;
                 int maxy = PosY + Height;
-                body.Text = PosX.ToString() + '-' + maxx.ToString() + "::" + PosY.ToString() + '-' + maxy.ToString();
+                _body_.Text = PosX.ToString() + '-' + maxx.ToString() + "::" + PosY.ToString() + '-' + maxy.ToString();
             #endif
         }
         public void Hide() { 
-            body.Visible = false; 
+            _body_.Visible = false; 
             Active = false;
-            body.Hide();
+            _body_.Hide();
         }
         public void SetLocation(int x, int y) {
             PosX = x;
             PosY = y;
-            body.Location = new Point(x, y);
+            _body_.Location = new Point(x, y);
         }
         public void Resize(int w, int h) {
             Width = w;
             Height = h;
-            body.Size = new Size(Width, Height);
+            _body_.Size = new Size(Width, Height);
         }
         public void Resize(int s) {
             Width = Height = s;
-            body.Size = new Size(s, s);
+            _body_.Size = new Size(s, s);
         }
-        public void SetColor(Color c) { body.BackColor = c; }
+        public void SetColor(Color c) { _body_.BackColor = c; }
     }
     public class Game : Field{
         private const int RefreshInterval = 25;         // ms
@@ -138,6 +139,7 @@ namespace ArkanoidBtn {
             Control = c;
             desk = new Desk(Width, Height, Control);
             desk.SetColor(Color.Blue);
+            desk.Body.MouseMove += new MouseEventHandler(MouseOnDeskMove);
             desk.Show();
             bricks = new BrickSet(Width, Height / 2, Control);
             ball = new Ball(Width, Height, desk.Thick + desk.AirBag, Control);
@@ -170,6 +172,12 @@ namespace ArkanoidBtn {
                 x = desk.Width / 2;
             }
             desk.SetLocation(x - desk.Width / 2, desk.FldH - desk.Thick - desk.AirBag);
+        }
+        public void DeskMoveRel(int x) {
+            DeskMoveTo(desk.PosX + x);
+        }
+        private void MouseOnDeskMove(object src, MouseEventArgs e) {
+            DeskMoveRel(e.X);
         }
         private void SetTimer() {
             timer = new System.Windows.Forms.Timer();
@@ -210,14 +218,14 @@ namespace ArkanoidBtn {
         public Desk(int w, int h, Control.ControlCollection c) : base (w, h) {
             SetSize();
             SetLocation((FldW - Width) / 2, FldH - Thick - AirBag);
-            c.Add(body);
+            c.Add(Body);
         }
         private void SetSize() {
             Thick = FldW / 40;
             AirBag = FldW / 50;
             Width = 6 * Thick;
             Height = Thick;
-            body.Size = new Size(Width, Height);
+            Body.Size = new Size(Width, Height);
         }
         public void NewFldSize(int w, int h){
             PosX = PosX * (w - Width) / (FldW - Width);
@@ -245,8 +253,8 @@ namespace ArkanoidBtn {
         }
         private void Init(int x, int y, int w, int h, Control.ControlCollection c) {
             SetLocation(x, y);
-            body.Size = new Size(w, h);
-            c.Add(body);
+            Body.Size = new Size(w, h);
+            c.Add(Body);
         }
     }
     public class BrickSet : Field {
@@ -341,13 +349,13 @@ namespace ArkanoidBtn {
             SpdX = rv * Math.Cos(alpha);
             SpdY = - rv * Math.Sin(alpha);
 
-            PosX = body.Location.X - Size / 2;
-            PosY = body.Location.Y - Size;
+            PosX = Body.Location.X - Size / 2;
+            PosY = Body.Location.Y - Size;
 
-            body.Location = new Point(PosX, PosY);
-            body.BackColor = Color.Brown;
-            body.FlatStyle = FlatStyle.Flat;
-            body.Show();
+            Body.Location = new Point(PosX, PosY);
+            Body.BackColor = Color.Brown;
+            Body.FlatStyle = FlatStyle.Flat;
+            Body.Show();
         }
         public void FlipX() {
             SpdX = -SpdX;
@@ -388,9 +396,11 @@ namespace ArkanoidBtn {
             if (CheckY()) {
                 FlipY();
             }
-            body.Location = new Point(PosX, PosY);
+            Body.Location = new Point(PosX, PosY);
         }
         public void NewFieldSize(int w, int h){     // Not override! 
+            SpdX *= (double) w / FldW;
+            SpdY *= (double) h / FldH;
             base.NewFieldSize(w, h);
             Resize(Size = CalcSize(w / 2, h));
         }
