@@ -23,9 +23,10 @@ namespace ArkanoidBtn {
         }
     }
     public class BaseObj {
-        private int _px_, _py_;
-        public virtual int PosX { get { return _px_; } set { _px_ = value; } }
-        public virtual int PosY { get { return _py_; } set { _py_ = value; } }
+        private int _px_, _py_, _dx_ = -1;
+        public virtual int PosX { get { return _px_; } set { _dx_=_px_; _px_=value; } }
+        public virtual int PosY { get { return _py_; } set { _py_=value; } }
+        public virtual int DeltaX { get { if (_dx_>=0) { return _px_-_dx_; } else return 0; } }
         public int Width, Height;
         public BaseObj(int w, int h) {
             Width = w;
@@ -123,19 +124,22 @@ namespace ArkanoidBtn {
         public void SetColor(Color c) { _body_.BackColor = c; }
     }
     public class Game : Field{
+        public int Score = 0;
         public int Attempts = 3;
         private const int RefreshInterval = 25;         // ms
         private System.Windows.Forms.Timer timer;
         private static long ticks;
-
-        public int Score = 0;
-        public bool GameOver = false;
-        
+        private static long tickn = 0;
+        private static int dx = 0;
         private Control.ControlCollection Control;
-
         private Desk desk;
         private BrickSet bricks;
         private Ball ball;
+
+#if DEBUG
+        private int[] ddx = new int[5];
+#endif
+
         public Game(int w, int h, Control.ControlCollection c) : base(w, h){
             Control = c;
             desk = new Desk(Width, Height, Control);
@@ -178,7 +182,11 @@ namespace ArkanoidBtn {
             if (x < desk.Width / 2) {
                 x = desk.Width / 2;
             }
-            desk.SetLocation(x - desk.Width / 2, desk.FldH - desk.Thick - desk.AirBag);
+            int newdx = x - desk.Width / 2;
+            if (newdx != desk.PosX) {
+                desk.SetLocation(newdx, desk.FldH - desk.Thick - desk.AirBag);
+                dx = desk.DeltaX;
+            }
         }
         public void DeskMoveRel(int x) {
             DeskMoveTo(desk.PosX + x);
@@ -194,6 +202,7 @@ namespace ArkanoidBtn {
             timer.Start();
         }
         private void OnTimerTick(Object src, EventArgs e) {
+            tickn++;
             long t = DateTime.Now.Ticks;
             double dt = (double)(t - ticks) / 1000000;
             ball.Move(dt);
@@ -201,6 +210,9 @@ namespace ArkanoidBtn {
             int col_res = bricks.CheckCollisionWith(ball.GetRect());
             if (col_res == 0) {
                 col_res = isIntersect(desk.GetRect(), ball.GetRect());
+                if (col_res > 0 && dx > 0) {
+                    ball.SpeedUp(dx);
+                }
             }
             if (col_res > 0) {
                 ProceedCollision(col_res);
@@ -344,9 +356,10 @@ namespace ArkanoidBtn {
     }
     public class Ball : Brick{
         public bool strikeout = false;
-        private double _pxd_, _pyd_;
-        public override int PosX { get { return (int)_pxd_; } set { _pxd_ = value; } }
-        public override int PosY { get { return (int)_pyd_; } set { _pyd_ = value; } }
+        private double _pxd_, _pyd_, _pdx_ = -1;
+        public override int PosX { get { return (int)_pxd_; } set { _pdx_=_pxd_; _pxd_=value; } }
+        public override int PosY { get { return (int)_pyd_; } set { _pyd_=value; } }
+        public override int DeltaX { get { if (_pdx_ >= 0) { return (int)(_pxd_ - _pdx_); } else return 0; } }
         public double SpdX, SpdY;
         public int Size { get { return Width; } set { Width = Height = value; } }
         public Ball(int w, int h, int d, Control.ControlCollection c) : base(w/2, h-d, c){
@@ -414,11 +427,14 @@ namespace ArkanoidBtn {
             }
             Body.Location = new Point(PosX, PosY);
         }
-        public void NewFieldSize(int w, int h){     // Not override! 
+        public new void NewFieldSize(int w, int h) {     // Not override! 
             SpdX *= (double) w / FldW;
             SpdY *= (double) h / FldH;
             base.NewFieldSize(w, h);
             Resize(Size = CalcSize(w / 2, h));
+        }
+        public void SpeedUp(int dx) {
+            SpdX += (double)dx;
         }
     }
 }
