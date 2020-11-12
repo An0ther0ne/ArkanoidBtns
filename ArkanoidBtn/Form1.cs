@@ -213,6 +213,11 @@ namespace ArkanoidBtn {
                 if (col_res > 0 && dx > 0) {
                     ball.SpeedUp(dx);
                 }
+            } else if (col_res > 0) {
+                Score += 10;
+                #if DEBUG
+                    Console.WriteLine("Score : {0:}", Score.ToString());
+                #endif
             }
             if (col_res > 0) {
                 ProceedCollision(col_res);
