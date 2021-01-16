@@ -6,6 +6,7 @@ This is simple arkanoid game implementation using standard Windows GUI and OOP m
 
 1. All elements in game are buttons.
 2. Support ingame resize the main window.
+3. Controled by mouse.
 
 ![m28.gif](img/sshot01.png)
 
